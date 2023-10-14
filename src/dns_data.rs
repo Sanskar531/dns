@@ -1,4 +1,5 @@
 use crate::answer::{AnswerPreamble, DNSAnswer};
+use crate::constants::DNS_HEADER_BYTES_LENGTH;
 use crate::header::DNSHeader;
 use crate::question::DNSQuestion;
 
@@ -9,25 +10,19 @@ pub struct DNSData {
     pub answer: DNSAnswer,
 }
 
-impl From<String> for DNSData {
-    fn from(buffer_as_string: String) -> DNSData {
-        let byte_representation = buffer_as_string.into_bytes();
-        println!("{:#?}", byte_representation);
+impl From<[u8; 512]> for DNSData {
+    fn from(buffer_as_string: [u8; 512]) -> Self {
+        let header_bytes: [u8; DNS_HEADER_BYTES_LENGTH] = buffer_as_string
+            [..DNS_HEADER_BYTES_LENGTH]
+            .try_into()
+            .unwrap();
+
         DNSData {
-            header: DNSHeader {
-                id: 0,
-                is_query: true,
-                opcode: 0,
-                authorative_answer: false,
-                truncated_message: false,
-                recursion_desired: false,
-                recursion_available: false,
-                reserved: 0,
-                response_code: 0,
-                question_count: 0,
-                answer_count: 0,
-                authority_count: 0,
-                additional_count: 0,
+            header: DNSHeader::from(header_bytes),
+            question: DNSQuestion {
+                record_type: 0,
+                class: 0,
+                question: "".into(),
             },
             answer: DNSAnswer {
                 preamble: AnswerPreamble {
@@ -39,11 +34,17 @@ impl From<String> for DNSData {
                 },
                 ip: 0,
             },
-            question: DNSQuestion {
-                record_type: 0,
-                class: 0,
-                question: "".into(),
-            },
+        }
+    }
+}
+
+#[allow(dead_code)]
+impl DNSData {
+    fn new(header: DNSHeader, question: DNSQuestion, answer: DNSAnswer) -> DNSData {
+        DNSData {
+            header,
+            question,
+            answer,
         }
     }
 }
