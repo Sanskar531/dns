@@ -1,6 +1,7 @@
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct DNSQuestion {
-    question: String,
-    record_type: u16,
-    class: u16,
+    pub question: String,
+    pub record_type: u16,
+    pub class: u16,
 }

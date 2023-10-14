@@ -1,17 +1,16 @@
 use std::fs;
-
-use crate::packet::DNSPacketBuffer;
+use crate::dns_data::DNSData;
 
 fn main() {
     println!("Hello, world!");
     let contents = fs::read_to_string("/home/sanskar/query_packet.txt");
-    if let Ok(a) = contents {
-        println!("{}", a);
-        let buffer: DNSPacketBuffer = DNSPacketBuffer::from(a);
+    if let Ok(query) = contents {
+        let buffer: DNSData = DNSData::from(query);
+        println!("{:#?}", buffer);
     }
 }
 
-pub mod dns_header;
+pub mod header;
 pub mod question;
 pub mod answer;
-pub mod packet;
+pub mod dns_data;

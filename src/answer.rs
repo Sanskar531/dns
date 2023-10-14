@@ -1,14 +1,15 @@
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct AnswerPreamble {
-    question: String,
-    record_type: u16,
-    class: u16,
-    ttl: u32,
-    len: u16,
+    pub question: String,
+    pub record_type: u16,
+    pub class: u16,
+    pub ttl: u32,
+    pub len: u16,
 }
 
-#[allow(dead_code)]
+#[derive(Debug)]
 pub struct DNSAnswer {
-    preamble: AnswerPreamble,
-    ip: u32,
+    pub preamble: AnswerPreamble,
+    pub ip: u32,
 }
