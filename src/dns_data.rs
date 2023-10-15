@@ -1,5 +1,5 @@
 use crate::answer::{AnswerPreamble, DNSAnswer};
-use crate::constants::DNS_HEADER_BYTES_LENGTH;
+use crate::constants::{DNS_HEADER_BYTES_LENGTH, DNS_DATA_BYTES_LENGTH};
 use crate::header::DNSHeader;
 use crate::question::DNSQuestion;
 
@@ -10,20 +10,16 @@ pub struct DNSData {
     pub answer: DNSAnswer,
 }
 
-impl From<[u8; 512]> for DNSData {
-    fn from(buffer_as_string: [u8; 512]) -> Self {
-        let header_bytes: [u8; DNS_HEADER_BYTES_LENGTH] = buffer_as_string
+impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSData {
+    fn from(buffer: &[u8; DNS_DATA_BYTES_LENGTH]) -> Self {
+        let header_bytes: [u8; DNS_HEADER_BYTES_LENGTH] = buffer
             [..DNS_HEADER_BYTES_LENGTH]
             .try_into()
             .unwrap();
 
         DNSData {
-            header: DNSHeader::from(header_bytes),
-            question: DNSQuestion {
-                record_type: 0,
-                class: 0,
-                question: "".into(),
-            },
+            header: DNSHeader::from(&header_bytes),
+            question: DNSQuestion::from(buffer),
             answer: DNSAnswer {
                 preamble: AnswerPreamble {
                     question: "".into(),
