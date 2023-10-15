@@ -4,6 +4,9 @@ use crate::{
 };
 
 // Directly copied from the DNS RFC
+// Header have specifc byte index and doesn't
+// need offset like question and answer part of
+// the DNS data.
 const DNS_DATA_ID_LENGTH_START: usize = 0;
 const DNS_DATA_ID_LENGTH_END: usize = 1;
 

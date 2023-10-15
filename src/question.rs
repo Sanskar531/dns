@@ -15,19 +15,24 @@ pub struct DNSQuestion {
 impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSQuestion {
     fn from(value: &[u8; DNS_DATA_BYTES_LENGTH]) -> Self {
         let body = &value[DNS_QUESTION_START_BYTE..];
-        let (question, mut ending_idx) = DNSBodyParser::extract_body_string(body).unwrap();
-        ending_idx += DNS_QUESTION_START_BYTE;
+        let (question, mut current_idx) = DNSBodyParser::extract_body_string(body).unwrap();
+        current_idx += DNS_QUESTION_START_BYTE;
 
         DNSQuestion {
             question,
             class: u16::from_be_bytes(
-                value[ending_idx..(ending_idx + DNS_QUESTION_TYPE_LENGTH)]
+                value[current_idx..({
+                    current_idx += DNS_QUESTION_TYPE_LENGTH;
+                    current_idx
+                })]
                     .try_into()
                     .unwrap(),
             ),
             record_type: u16::from_be_bytes(
-                value[(ending_idx + DNS_QUESTION_TYPE_LENGTH)
-                    ..(ending_idx + DNS_QUESTION_TYPE_LENGTH + DNS_QUESTION_CLASS_LENGTH)]
+                value[current_idx..({
+                    current_idx += DNS_QUESTION_CLASS_LENGTH;
+                    current_idx
+                })]
                     .try_into()
                     .unwrap(),
             ),

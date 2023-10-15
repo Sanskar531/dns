@@ -1,4 +1,4 @@
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::Ipv4Addr;
 
 use crate::{
     constants::DNS_DATA_BYTES_LENGTH, helpers::DNSBodyParser, question::DNS_QUESTION_START_BYTE,
@@ -12,6 +12,8 @@ const DNS_ANSWER_CLASS_LENGTH: usize = 2;
 
 const DNS_ANSWER_TTL_LENGTH: usize = 4;
 const DNS_ANSWER_LEN_LENGTH: usize = 2;
+
+const DNS_ANSWER_IP_LENGTH: usize = 4;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -36,58 +38,54 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSAnswer {
             DNSBodyParser::extract_body_string(question_body).unwrap();
         question_ending_idx += DNS_QUESTION_START_BYTE + DNS_QUESTION_REMAINING_BYTES;
 
-        let ending_idx = question_ending_idx + DNS_QUERY_OFFSET_BYTES;
-        let ip_addr: [u8; 4] = value[(ending_idx
-            + DNS_ANSWER_TYPE_LENGTH
-            + DNS_ANSWER_CLASS_LENGTH
-            + DNS_ANSWER_TTL_LENGTH
-            + DNS_ANSWER_LEN_LENGTH)
-            ..(ending_idx
-                + DNS_ANSWER_TYPE_LENGTH
-                + DNS_ANSWER_CLASS_LENGTH
-                + DNS_ANSWER_TTL_LENGTH
-                + DNS_ANSWER_LEN_LENGTH
-                + 4)]
-            .try_into()
-            .unwrap();
+        let mut current_idx = question_ending_idx + DNS_QUERY_OFFSET_BYTES;
+
         DNSAnswer {
             preamble: AnswerPreamble {
                 question,
                 class: u16::from_be_bytes(
-                    value[ending_idx..(ending_idx + DNS_ANSWER_TYPE_LENGTH)]
+                    value[current_idx..({
+                        current_idx += DNS_ANSWER_TYPE_LENGTH;
+                        current_idx
+                    })]
                         .try_into()
                         .unwrap(),
                 ),
                 record_type: u16::from_be_bytes(
-                    value[(ending_idx + DNS_ANSWER_TYPE_LENGTH)
-                        ..(ending_idx + DNS_ANSWER_TYPE_LENGTH + DNS_ANSWER_CLASS_LENGTH)]
+                    value[current_idx..({
+                        current_idx += DNS_ANSWER_CLASS_LENGTH;
+                        current_idx
+                    })]
                         .try_into()
                         .unwrap(),
                 ),
                 ttl: u32::from_be_bytes(
-                    value[(ending_idx + DNS_ANSWER_TYPE_LENGTH + DNS_ANSWER_CLASS_LENGTH)
-                        ..(ending_idx
-                            + DNS_ANSWER_TYPE_LENGTH
-                            + DNS_ANSWER_CLASS_LENGTH
-                            + DNS_ANSWER_TTL_LENGTH)]
+                    value[current_idx..({
+                        current_idx += DNS_ANSWER_TTL_LENGTH;
+                        current_idx
+                    })]
                         .try_into()
                         .unwrap(),
                 ),
                 len: u16::from_be_bytes(
-                    value[(ending_idx
-                        + DNS_ANSWER_TYPE_LENGTH
-                        + DNS_ANSWER_CLASS_LENGTH
-                        + DNS_ANSWER_TTL_LENGTH)
-                        ..(ending_idx
-                            + DNS_ANSWER_TYPE_LENGTH
-                            + DNS_ANSWER_CLASS_LENGTH
-                            + DNS_ANSWER_TTL_LENGTH
-                            + DNS_ANSWER_LEN_LENGTH)]
+                    value[current_idx..({
+                        current_idx += DNS_ANSWER_LEN_LENGTH;
+                        current_idx
+                    })]
                         .try_into()
                         .unwrap(),
                 ),
             },
-            ip: Ipv4Addr::new(ip_addr[0], ip_addr[1], ip_addr[2], ip_addr[3]),
+            ip: {
+                let ip_addr: [u8; 4] = value[current_idx..({
+                    current_idx += DNS_ANSWER_IP_LENGTH;
+                    current_idx
+                })]
+                    .try_into()
+                    .unwrap();
+
+                Ipv4Addr::new(ip_addr[0], ip_addr[1], ip_addr[2], ip_addr[3])
+            },
         }
     }
 }
