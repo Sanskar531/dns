@@ -15,8 +15,8 @@ fn main() -> io::Result<()> {
 }
 
 pub mod answer;
+pub mod constants;
 pub mod dns_data;
 pub mod header;
-pub mod question;
-pub mod constants;
 pub mod helpers;
+pub mod question;
