@@ -15,7 +15,6 @@ const DNS_ANSWER_LEN_LENGTH: usize = 2;
 
 const DNS_ANSWER_IP_LENGTH: usize = 4;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct AnswerPreamble {
     pub question: String,
@@ -36,8 +35,8 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSAnswer {
         let question_body = &value[DNS_QUESTION_START_BYTE..];
         let (question, mut question_ending_idx) =
             DNSBodyParser::extract_body_string(question_body).unwrap();
-        question_ending_idx += DNS_QUESTION_START_BYTE + DNS_QUESTION_REMAINING_BYTES;
 
+        question_ending_idx += DNS_QUESTION_START_BYTE + DNS_QUESTION_REMAINING_BYTES;
         let mut current_idx = question_ending_idx + DNS_QUERY_OFFSET_BYTES;
 
         DNSAnswer {

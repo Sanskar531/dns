@@ -15,17 +15,27 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSData {
         let header_bytes: [u8; DNS_HEADER_BYTES_LENGTH] =
             buffer[..DNS_HEADER_BYTES_LENGTH].try_into().unwrap();
 
-        let mut dns_date = DNSData {
+        let mut dns_data = DNSData {
             header: DNSHeader::from(&header_bytes),
             question: DNSQuestion::from(buffer),
             answer: None,
         };
 
-        if dns_date.header.is_answer {
-            dns_date.answer = Some(DNSAnswer::from(buffer))
+        if dns_data.header.is_answer {
+            dns_data.answer = Some(DNSAnswer::from(buffer))
         }
 
-        return dns_date;
+        let bit_encoded_header: [u8; DNS_HEADER_BYTES_LENGTH] = dns_data.header.clone().into();
+
+        dbg!(bit_encoded_header);
+
+        return dns_data;
+    }
+}
+
+impl Into<[u8; DNS_DATA_BYTES_LENGTH]> for DNSData {
+    fn into(self) -> [u8; DNS_DATA_BYTES_LENGTH] {
+        [0; DNS_DATA_BYTES_LENGTH]
     }
 }
 

@@ -34,7 +34,7 @@ const DNS_DATA_AUTHORITY_COUNT_LENGTH_END: usize = 9;
 const DNS_DATA_ADDITIONAL_COUNT_LENGTH_START: usize = 10;
 const DNS_DATA_ADDITIONAL_COUNT_LENGTH_END: usize = 11;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct DNSHeader {
     pub id: u16,
     pub is_answer: bool,
@@ -53,6 +53,7 @@ pub struct DNSHeader {
 
 impl From<&[u8; DNS_HEADER_BYTES_LENGTH]> for DNSHeader {
     fn from(value: &[u8; DNS_HEADER_BYTES_LENGTH]) -> Self {
+        dbg!(value);
         DNSHeader {
             id: u16::from_be_bytes(
                 value[DNS_DATA_ID_LENGTH_START..=DNS_DATA_ID_LENGTH_END]
@@ -107,5 +108,72 @@ impl From<&[u8; DNS_HEADER_BYTES_LENGTH]> for DNSHeader {
                     .unwrap(),
             ),
         }
+    }
+}
+
+impl Into<[u8; DNS_HEADER_BYTES_LENGTH]> for DNSHeader {
+    fn into(self) -> [u8; DNS_HEADER_BYTES_LENGTH] {
+        let mut bit_encoded_dns_header = [0; DNS_HEADER_BYTES_LENGTH];
+        bit_encoded_dns_header[DNS_DATA_ID_LENGTH_START..=DNS_DATA_ID_LENGTH_END]
+            .copy_from_slice(&self.id.to_be_bytes());
+
+        let op_code_byte = {
+            let mut val = 0u8;
+            if self.is_answer {
+                val = val | 1;
+            }
+            val = val << 3 | self.opcode & 0b00000111;
+            val = val << 1;
+            if self.authorative_answer {
+                val = val | 1;
+            }
+            val = val << 1;
+            if self.truncated_message {
+                val = val | 1;
+            }
+            val = val << 1;
+            if self.recursion_desired {
+                val = val | 1;
+            }
+
+            val
+        };
+        bit_encoded_dns_header[OP_CODE_AND_FLAGS_BYTE] = op_code_byte;
+
+        let response_code_byte = {
+            let mut val = 0u8;
+            if self.recursion_available {
+                val = val | 1;
+            }
+            val = val << 3 | self.reserved & 0b00000111;
+            val = val << 4 | self.response_code & 0b00001111;
+
+            val
+        };
+        bit_encoded_dns_header[RESPONSE_CODE_AND_FLAGS_BYTE] = response_code_byte;
+
+        let question_count_bytes = self.question_count.to_be_bytes();
+        bit_encoded_dns_header
+            [DNS_DATA_QUESTION_COUNT_LENGTH_START..=DNS_DATA_QUESTION_COUNT_LENGTH_END]
+            .copy_from_slice(&question_count_bytes);
+
+        let answer_count_bytes = self.answer_count.to_be_bytes();
+        bit_encoded_dns_header
+            [DNS_DATA_ANSWER_COUNT_LENGTH_START..=DNS_DATA_ANSWER_COUNT_LENGTH_END]
+            .copy_from_slice(&answer_count_bytes);
+
+        let authority_count_bytes = self.authority_count.to_be_bytes();
+        bit_encoded_dns_header
+            [DNS_DATA_AUTHORITY_COUNT_LENGTH_START..=DNS_DATA_AUTHORITY_COUNT_LENGTH_END]
+            .copy_from_slice(&authority_count_bytes);
+
+        let additonal_count_bytes = self.additional_count.to_be_bytes();
+        bit_encoded_dns_header
+            [DNS_DATA_ADDITIONAL_COUNT_LENGTH_START..=DNS_DATA_ADDITIONAL_COUNT_LENGTH_END]
+            .copy_from_slice(&additonal_count_bytes);
+
+        dbg!(bit_encoded_dns_header);
+
+        bit_encoded_dns_header
     }
 }
