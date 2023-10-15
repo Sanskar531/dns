@@ -36,9 +36,9 @@ pub fn extract_num_from_bits(bit_idx: (u8, u8), num: u8) -> Result<u8, &'static 
     Ok(value)
 }
 
-pub struct BodyParser {}
+pub struct DNSBodyParser {}
 
-impl BodyParser {
+impl DNSBodyParser {
     pub fn extract_body_string(body_buf: &[u8]) -> Result<(String, usize), &'static str> {
         let mut value = String::new();
         let mut ending_idx: Option<usize> = None;

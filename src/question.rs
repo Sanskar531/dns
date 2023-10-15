@@ -1,6 +1,6 @@
-use crate::{constants::DNS_DATA_BYTES_LENGTH, helpers::BodyParser};
+use crate::{constants::DNS_DATA_BYTES_LENGTH, helpers::DNSBodyParser};
 
-const DNS_QUESTION_START_BYTE: usize = 12;
+pub const DNS_QUESTION_START_BYTE: usize = 12;
 
 const DNS_QUESTION_TYPE_LENGTH: usize = 2;
 const DNS_QUESTION_CLASS_LENGTH: usize = 2;
@@ -15,7 +15,7 @@ pub struct DNSQuestion {
 impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSQuestion {
     fn from(value: &[u8; DNS_DATA_BYTES_LENGTH]) -> Self {
         let body = &value[DNS_QUESTION_START_BYTE..];
-        let (question, mut ending_idx) = BodyParser::extract_body_string(body).unwrap();
+        let (question, mut ending_idx) = DNSBodyParser::extract_body_string(body).unwrap();
         ending_idx += DNS_QUESTION_START_BYTE;
 
         DNSQuestion {
