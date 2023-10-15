@@ -25,9 +25,14 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSData {
             dns_data.answer = Some(DNSAnswer::from(buffer))
         }
 
-        let bit_encoded_header: [u8; DNS_HEADER_BYTES_LENGTH] = dns_data.header.clone().into();
+        let mut encoded_dns_data: [u8; DNS_DATA_BYTES_LENGTH] = [0u8; 512];
 
-        dbg!(bit_encoded_header);
+        let bit_encoded_header: [u8; DNS_HEADER_BYTES_LENGTH] = dns_data.header.clone().into();
+        encoded_dns_data[..DNS_HEADER_BYTES_LENGTH].copy_from_slice(&bit_encoded_header);
+
+        dns_data.question.pack_into(&mut encoded_dns_data);
+
+        dbg!(encoded_dns_data);
 
         return dns_data;
     }

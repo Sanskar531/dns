@@ -53,7 +53,6 @@ pub struct DNSHeader {
 
 impl From<&[u8; DNS_HEADER_BYTES_LENGTH]> for DNSHeader {
     fn from(value: &[u8; DNS_HEADER_BYTES_LENGTH]) -> Self {
-        dbg!(value);
         DNSHeader {
             id: u16::from_be_bytes(
                 value[DNS_DATA_ID_LENGTH_START..=DNS_DATA_ID_LENGTH_END]
