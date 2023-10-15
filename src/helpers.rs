@@ -51,7 +51,7 @@ impl DNSBodyParser {
 
             if body_buf[i].is_ascii_alphabetic() {
                 value.push(body_buf[i].to_ascii_lowercase() as char);
-            } else {
+            } else if i != 0 {
                 value += ".";
             }
         }

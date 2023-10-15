@@ -39,3 +39,26 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSQuestion {
         }
     }
 }
+
+impl DNSQuestion {
+    fn pack_into(&self, dns_data: &mut [u8; DNS_DATA_BYTES_LENGTH]) {
+        // Just pack into question_data section no need to worry about
+        // headers
+        let question_data = &mut dns_data[DNS_QUESTION_START_BYTE..];
+
+        let split_label: Vec<&str> = self.question.split(".").collect();
+
+        let mut encoded_labels: Vec<u8> = vec![];
+
+        for label in split_label {
+            let label_len: u8 = label.len().try_into().unwrap();
+            encoded_labels.push(label_len);
+            label
+                .to_ascii_lowercase()
+                .chars()
+                .for_each(|current_char| encoded_labels.push(current_char as u8));
+        }
+
+        question_data.copy_from_slice(&encoded_labels.as_slice());
+    }
+}
