@@ -1,4 +1,4 @@
-use std::net::Ipv4Addr;
+use std::{io::Write, net::Ipv4Addr};
 
 use crate::{
     constants::DNS_DATA_BYTES_LENGTH, helpers::DNSBodyParser, question::DNS_QUESTION_START_BYTE,
@@ -15,7 +15,7 @@ const DNS_ANSWER_LEN_LENGTH: usize = 2;
 
 const DNS_ANSWER_IP_LENGTH: usize = 4;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AnswerPreamble {
     pub question: String,
     pub record_type: u16,
@@ -24,13 +24,13 @@ pub struct AnswerPreamble {
     pub len: u16,
 }
 
-#[derive(Debug)]
-pub struct DNSAnswer {
+#[derive(Debug, Clone)]
+pub struct DNSRecord {
     pub preamble: AnswerPreamble,
     pub ip: Ipv4Addr,
 }
 
-impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSAnswer {
+impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSRecord {
     fn from(value: &[u8; DNS_DATA_BYTES_LENGTH]) -> Self {
         let question_body = &value[DNS_QUESTION_START_BYTE..];
         let (question, mut question_ending_idx) =
@@ -39,7 +39,7 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSAnswer {
         question_ending_idx += DNS_QUESTION_START_BYTE + DNS_QUESTION_REMAINING_BYTES;
         let mut current_idx = question_ending_idx + DNS_QUERY_OFFSET_BYTES;
 
-        DNSAnswer {
+        DNSRecord {
             preamble: AnswerPreamble {
                 question,
                 class: u16::from_be_bytes(
@@ -89,25 +89,27 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSAnswer {
     }
 }
 
-impl DNSAnswer {
-    fn pack_into(&self, dns_data: &mut [u8; DNS_DATA_BYTES_LENGTH]) {
-        // Just pack into question_data section no need to worry about
-        // headers
-        let question_data = &mut dns_data[DNS_QUESTION_START_BYTE..];
-
-        let split_label: Vec<&str> = self.question.split(".").collect();
+impl DNSRecord {
+    pub fn pack_into(
+        &self,
+        dns_data: &mut [u8; DNS_DATA_BYTES_LENGTH],
+        question_ending_idx: usize,
+    ) {
+        // Just pack into question_data section no need to worry about headers
+        let mut answer_data = &mut dns_data[(DNS_QUESTION_START_BYTE + question_ending_idx)..];
 
         let mut encoded_labels: Vec<u8> = vec![];
 
-        for label in split_label {
-            let label_len: u8 = label.len().try_into().unwrap();
-            encoded_labels.push(label_len);
-            label
-                .to_ascii_lowercase()
-                .chars()
-                .for_each(|current_char| encoded_labels.push(current_char as u8));
-        }
+        encoded_labels.push(192);
+        encoded_labels.push(12);
 
-        question_data.copy_from_slice(&encoded_labels.as_slice());
+        encoded_labels.extend_from_slice(&self.preamble.class.to_be_bytes());
+        encoded_labels.extend_from_slice(&self.preamble.record_type.to_be_bytes());
+        encoded_labels.extend_from_slice(&self.preamble.ttl.to_be_bytes());
+        encoded_labels.extend_from_slice(&self.preamble.len.to_be_bytes());
+
+        encoded_labels.extend_from_slice(&self.ip.octets());
+
+        answer_data.write_all(&encoded_labels.as_slice()).unwrap();
     }
 }

@@ -14,9 +14,9 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-pub mod answer;
 pub mod constants;
 pub mod dns_data;
 pub mod header;
 pub mod helpers;
 pub mod question;
+pub mod record;

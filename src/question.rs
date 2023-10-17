@@ -7,7 +7,7 @@ pub const DNS_QUESTION_START_BYTE: usize = 12;
 const DNS_QUESTION_TYPE_LENGTH: usize = 2;
 const DNS_QUESTION_CLASS_LENGTH: usize = 2;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DNSQuestion {
     pub question: String,
     pub record_type: u16,
@@ -44,7 +44,8 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSQuestion {
 }
 
 impl DNSQuestion {
-    pub fn pack_into(&self, dns_data: &mut [u8; DNS_DATA_BYTES_LENGTH]) {
+    // Returns the index at which the question byte ends
+    pub fn pack_into(&self, dns_data: &mut [u8; DNS_DATA_BYTES_LENGTH]) -> usize {
         // Just pack into question_data section no need to worry about
         // headers
         let mut question_data = &mut dns_data[DNS_QUESTION_START_BYTE..];
@@ -68,6 +69,10 @@ impl DNSQuestion {
         question_labels_and_flags.extend_from_slice(&self.class.to_be_bytes());
         question_labels_and_flags.extend_from_slice(&self.record_type.to_be_bytes());
 
-        question_data.write_all(&question_labels_and_flags.as_slice()).unwrap();
+        question_data
+            .write_all(&question_labels_and_flags.as_slice())
+            .unwrap();
+
+        return question_labels_and_flags.len();
     }
 }

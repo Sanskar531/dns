@@ -1,4 +1,4 @@
-use crate::answer::DNSAnswer;
+use crate::record::DNSRecord;
 use crate::constants::{DNS_DATA_BYTES_LENGTH, DNS_HEADER_BYTES_LENGTH};
 use crate::header::DNSHeader;
 use crate::question::DNSQuestion;
@@ -7,7 +7,7 @@ use crate::question::DNSQuestion;
 pub struct DNSData {
     pub header: DNSHeader,
     pub question: DNSQuestion,
-    pub answer: Option<DNSAnswer>,
+    pub answer: Option<Vec<DNSRecord>>,
 }
 
 impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSData {
@@ -22,7 +22,7 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSData {
         };
 
         if dns_data.header.is_answer {
-            dns_data.answer = Some(DNSAnswer::from(buffer))
+            dns_data.answer = Some(DNSRecord::from(buffer))
         }
 
         let mut encoded_dns_data: [u8; DNS_DATA_BYTES_LENGTH] = [0u8; 512];
@@ -30,7 +30,11 @@ impl From<&[u8; DNS_DATA_BYTES_LENGTH]> for DNSData {
         let bit_encoded_header: [u8; DNS_HEADER_BYTES_LENGTH] = dns_data.header.clone().into();
         encoded_dns_data[..DNS_HEADER_BYTES_LENGTH].copy_from_slice(&bit_encoded_header);
 
-        dns_data.question.pack_into(&mut encoded_dns_data);
+        let question_ending_idx = dns_data.question.clone().pack_into(&mut encoded_dns_data);
+
+        if let Some(answer) = &dns_data.answer {
+            answer.clone().pack_into(&mut encoded_dns_data, question_ending_idx);
+        }
 
         dbg!(encoded_dns_data);
 
@@ -46,7 +50,7 @@ impl Into<[u8; DNS_DATA_BYTES_LENGTH]> for DNSData {
 
 #[allow(dead_code)]
 impl DNSData {
-    fn new(header: DNSHeader, question: DNSQuestion, answer: Option<DNSAnswer>) -> DNSData {
+    fn new(header: DNSHeader, question: DNSQuestion, answer: Option<DNSRecord>) -> DNSData {
         DNSData {
             header,
             question,
